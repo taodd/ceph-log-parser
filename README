@@ -1,3 +1,9 @@
+An example for parsing osd log
+
+./main.py -t osd -m bokeh -f <osd.log>
+
+Now we need debug_ms=1 and debug_osd=15 for the osd's log
+
 ###OSD###
 1. latency for a write and read op in one osd, reply time - start time
 2. latency for an op between dequeue_op start and dequeue_op finish (time spend in osd op thread for an op)
