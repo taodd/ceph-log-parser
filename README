@@ -1,0 +1,31 @@
+###OSD###
+1. latency for a write and read op in one osd, reply time - start time
+2. latency for an op between dequeue_op start and dequeue_op finish (time spend in osd op thread for an op)
+3. latency for bluestore read op and read op size
+4. latency for bluestore write allocate latency, _do_write_small
+5. latency for bluestore penalty read latency
+todo list
+
+###MON###
+1. latency for proposal submit 
+2. Monitor flapping check
+3. slow request check
+4. osd healthy check (heartbeat no reply check)
+
+###MDS###
+1. cache status check
+//log line
+mds.0.cache Memory usage:  total 15075176, rss 14665904, heap 330416, baseline 330416, 3092793 / 3710431 inodes have caps, 3101124 caps, 0.835785 caps per inode
+
+2. op latency
+
+
+###RGW###
+
+###Messenger###
+to do
+
+
+
+
+
