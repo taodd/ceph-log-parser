@@ -320,7 +320,7 @@ def is_bs_penalty_read_end(words):
 ##not repop
 def is_op(word):
     return re.search(osdtpl.op_key, word) != None
-
+'''
 def is_read_op_start(line, words):
     if utils.log_compare_without_len(words, osdtpl.read_op_words, osdtpl.read_op_idx_list):
        if utils.log_match(line, osdtpl.read_op_match_list):
@@ -329,14 +329,17 @@ def is_read_op_start(line, words):
          # print "read op start", line
           return True
     return False
+'''
 
-def process_read_op_start(words, rops):
-    op = {}
-    op["dispatch_time"] = words[0] + "-" + words[1]
-    for key in osdtpl.read_op_key2idx.keys():
-        idx = osdtpl.read_op_key2idx[key]
-        op[key] = words[idx]
-    rops[op["opid"]] = op  
+def is_read_op_start(line, words):
+    if is_enqueue_op(words):
+        if is_op(words[osdtpl.enqueue_op_key2idx["opid"]]) and get_osd_op_type(line) == "read":
+           return True
+    return False 
+
+def process_read_op_start(line, words, rops):
+    op = process_enqueue_op(line, words, rops)
+    rops[op["opid"]] = op 
 
 def is_ms_op_reply(line, words):
 ## could be read or write, need to identify in process_foo
@@ -352,6 +355,7 @@ def get_op_tid(opid):
     wds = opid.split(":")
     return wds[-1]
 
+'''
 def check_and_process_read_op_reply(line, words, rops):
     op_reply = {}
     if is_ms_op_reply(line, words):
@@ -368,25 +372,48 @@ def check_and_process_read_op_reply(line, words, rops):
               #print "read op reply", line
               return True
     return False
+'''
 
 def gen_read_op_df(rops):
+    #import pdb; pdb.set_trace();
     ops_diclist = utils.gen_v_list(rops)
-    dispatch_time = utils.gen_element_in_diclist(ops_diclist, "dispatch_time")
-    opts = [utils.timestamp(x) for x in dispatch_time]
-    op_lat = utils.gen_element_in_diclist(ops_diclist, "latency")
+    enqueue_time = utils.gen_element_in_diclist(ops_diclist, "enqueue_time")
+    opts = [utils.timestamp(x) for x in enqueue_time]
     opid = utils.gen_element_in_diclist(ops_diclist, "opid")
-    all_data = {"opts": opts, "op_lat": op_lat, "dispatch_time": dispatch_time, "opid": opid} 
+    before_enqueue_lat = utils.gen_element_in_diclist(ops_diclist, "before_enqueue_lat")
+    reply_time = utils.gen_element_in_diclist(ops_diclist, "reply_time")
+    eop_lat = [utils.time_substract(reply_time[idx], enqueue_time[idx]) for idx in range(len(enqueue_time))]
+    op_lat = [float(eop_lat[idx]) + float(before_enqueue_lat[idx]) for idx in range(len(eop_lat))]
+    print op_lat
+    queue_lat = utils.gen_element_in_diclist(ops_diclist, "queue_latency")
+    dequeue_lat = utils.gen_element_in_diclist(ops_diclist, "dequeue_latency")
+    dequeue_count = utils.gen_element_in_diclist(ops_diclist, "dequeue_count")
+    
+    all_data = {"opid": opid, 
+                "opts": opts, 
+                "op_lat": op_lat, 
+                "enqueue_time": enqueue_time,
+		"before_enqueue_lat": before_enqueue_lat, 
+                "queue_lat": queue_lat,
+                "dequeue_lat": dequeue_lat, 
+                "dequeue_count": dequeue_count
+               }
+  
     return pd.DataFrame(all_data) 
 
 def print_read_op_latency(rops):
-    gen_read_op_df(rops) 
+    df = gen_read_op_df(rops) 
     output_file("osd_read_op")
     
     TOOLS="crosshair,pan,wheel_zoom,box_zoom,reset,hover,save"
     TOOLTIPS=[
-              ("opid", "opid:@opid"), 
-              ("dispatch_time", "dispatch_time@dispatch_time"), 
-              ("op_lat","op_lat:@op_lat")
+              ("opid", "opid"), 
+              ("enqueue_time", "@enqueue_time"), 
+              ("op_lat","@op_lat"),
+              ("before_enqueue_lat", "@before_enqueue_lat"), 
+              ("queue_lat","@queue_lat"),
+              ("dequeue_lat", "@dequeue_lat"),
+              ("dequeue_count", "@dequeue_count")
              ]
     hover = HoverTool(
             tooltips = TOOLTIPS
@@ -520,12 +547,15 @@ def process_dequeue_op_end(words, wops, rops):
         dequeue_end[key] = words[idx]
     for ops in [wops, rops]:
         for op in ops.values():
-            if op.has_key("dequeue_thread"):
+            if op.has_key("dequeue_thread"): ## means it is still in the osd dequeue thread
                if op["dequeue_thread"] == dequeue_end["thread"]:
                   op["dequeue_latency"] = str(utils.time_substract(dequeue_end["time"], op["dequeue_time"]))
+                  if op["op_type"] == "read":
+		       ## for read, it is also the end of a read op
+                       op["reply_time"] = dequeue_end["time"]
                   del op["dequeue_thread"]
 
-# This is now the start of an osd write op, we might change it later when we start develop the messenger level
+# This is now the start of an osd op, we might change it later when we start develop the messenger level
 def process_enqueue_op(line, words, ops):
     #time spent on messenger level: time(enqueue_op) - time(messenger receive the first byte)
     op = {}
@@ -747,10 +777,10 @@ def start_parse_osd_log(filepath, mode):
           if is_subop_reply(line, words):
              process_subop_reply(words, wops)
              continue
-          '''
           if is_read_op_start(line, words):
-             process_read_op_start(words, rops)
+             process_read_op_start(line, words, rops)
              continue
+          '''
           if check_and_process_read_op_reply(line, words, rops):
              continue
            '''
@@ -782,9 +812,10 @@ def start_parse_osd_log(filepath, mode):
        # remove those non completed ops
        remove_no_reply_op(wops)
        print_write_op_latency(wops)
-       #print_read_op_latency(rops)
-       print_bs_latency("bluestore_alloc_write", bsw_stats)
-       print_bs_latency("bluestore_read", bsr_stats)
+       remove_no_reply_op(rops)
+       print_read_op_latency(rops)
+       #print_bs_latency("bluestore_alloc_write", bsw_stats)
+       #print_bs_latency("bluestore_read", bsr_stats)
        
 
 '''
