@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+from __future__ import print_function
 import sys
 import os
 import argparse
@@ -20,11 +21,11 @@ def parse_args():
    return vars(args)
 
 def main():
-  args = parse_args()  
+  args = parse_args()
   filepath = args['file']
   mode = args['mode']
   tp = args['type']
-  print args
+  print(args)
   if not os.path.isfile(filepath):
        print("File path {} does not exist. Exiting...".format(filepath))
        sys.exit()
@@ -38,4 +39,4 @@ def main():
 
 if __name__ == '__main__':
    main()
-  
+

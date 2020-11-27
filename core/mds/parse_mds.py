@@ -1,6 +1,7 @@
 #2020-08-31 07:09:19.141 7fe4a4b8f700  2 mds.0.cache Memory usage:  total 15075176, rss 14665904, heap 330416, baseline 330416, 3181526 / 3662455 inodes have caps, 3183808 caps, 0.86931 caps per inode
 
 from __future__ import division
+from __future__ import print_function
 from bokeh.plotting import figure, output_file, show
 from bokeh.models import CustomJS, Dropdown, ColumnDataSource, Select, Button
 from bokeh.layouts import column, row, widgetbox
@@ -34,10 +35,10 @@ def gen_element_in_diclist(mds_cache_stats, key):
   return [mcs[key] for mcs in mds_cache_stats]
 
 def print_mcs_bokeh():
-   
+
    TOOLS="crosshair,pan,wheel_zoom,box_zoom,reset,hover,save"
 
-   
+
    time = utils.gen_element_in_diclist(mds_cache_stats, "time")
    timestamp = [utils.timestamp(x) for x in time]
    xtime = [(x - timestamp[0]).total_seconds() for x in timestamp]
@@ -47,8 +48,8 @@ def print_mcs_bokeh():
    #inodes[0] = 10000
    xcaps = utils.gen_element_in_diclist(mds_cache_stats, "caps")
    caps = [int(x) for x in xcaps]
-   print caps
-   
+   print(caps)
+
    TOOLTIPS=[ ("(x, y)", "x:$x y:$y"), ("time", "time:@time"), ("caps", "caps:@caps"), ("inodes", "inodes:@inodes")]
    all_data = {"xtime": xtime, "time" : time, "inodes": inodes, "caps" : caps}
    hover = HoverTool(
@@ -56,7 +57,7 @@ def print_mcs_bokeh():
    )
    pd.options.display.max_rows = 300000000
    df = pd.DataFrame(all_data)
-    
+
    source = ColumnDataSource(df)
    #source = ColumnDataSource(data = dict(x = xtime, y = inodes))
 
@@ -67,11 +68,11 @@ def print_mcs_bokeh():
    p.circle('xtime', 'inodes', source = source, legend_label="inodes", size=3, color="red")
    p.circle(x = "xtime", y = "caps", source = source, legend_label="caps", size=3, color="black")
    #p.line('x', 'y', source = source, legend_label=inodes, line_color="blue", line_dash="4 4")
-   show(p)   
-   print "bokeh output"
+   show(p)
+   print("bokeh output")
 
 def print_mcs_text():
-   print "text output"
+   print("text output")
 
 def print_mcs(mode):
    if mode == "bokeh":
@@ -81,7 +82,7 @@ def print_mcs(mode):
    elif mode == "all":
       print_mcs_text()
       print_mcs_bokeh()
-   
+
 
 def start_parse_mds_log(filepath, mode):
    with open(filepath) as fp:

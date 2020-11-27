@@ -1,4 +1,5 @@
 from __future__ import division
+from __future__ import print_function
 import datetime
 import templates.mon.tpl as montpl
 import common.utils as utils
@@ -8,7 +9,7 @@ from bokeh.models import CustomJS, Dropdown, ColumnDataSource, Select, Button
 from bokeh.layouts import column, row, widgetbox
 import pandas as pd
 from bokeh.models import HoverTool
-import itertools  
+import itertools
 from bokeh.palettes import Dark2_5 as palette
 
 osd_fail_reports = []
@@ -50,12 +51,12 @@ def process_osd_fail_report(words):
        idx = montpl.osd_fail_key2idx[key]
        osd_fail[key] = words[idx]
     osd_fail_reports.append(osd_fail)
-    
+
 def get_delta_hour(time):
    ts = utils.timestamp(time);
    delta_hour = (ts - start_ts).total_seconds() / 3600
    return int(delta_hour)
-    
+
 def gen_count_per_hour(reports, res):
     for report in reports:
        dh = get_delta_hour(report["time"])
@@ -63,7 +64,7 @@ def gen_count_per_hour(reports, res):
           res[dh] += 1
        else:
           res[dh] = 1
-        
+
 
 def get_start_timestamp(fp):
    first_line = fp.readline()
@@ -83,7 +84,7 @@ def is_slow_requests(line):
 def process_slow_requests(words, wdlen):
     slow_request = {}
     slow_request["time"] = words[0] + "-" + words[1]
-    slow_requests.append(slow_request) 
+    slow_requests.append(slow_request)
 
 def check_slow_requests(line, words, wdlen):
     if is_slow_requests(line):
@@ -96,27 +97,27 @@ def gen_mon_stats():
     gen_count_per_hour(osd_fail_reports, osd_fails_per_hour)
     gen_count_per_hour(mon_flaps, mon_flaps_per_hour)
     gen_count_per_hour(slow_requests, slow_requests_per_hour)
-    
+
 
 def print_monstat_bokeh():
     total_stats = {
-                   "osd_fails": osd_fails_per_hour, 
-                   "mon_flaps": mon_flaps_per_hour, 
+                   "osd_fails": osd_fails_per_hour,
+                   "mon_flaps": mon_flaps_per_hour,
                    "slow_requests": slow_requests_per_hour
                   }
     output_file("output/mon_stats.html")
     p = figure(plot_width=800, plot_height=600, x_axis_label='time(hour)', y_axis_label='number')
 
-    colors = itertools.cycle(palette)    
+    colors = itertools.cycle(palette)
     for key, color in zip(total_stats.keys(), colors):
        x, y = utils.gen_kv_list(total_stats[key])
        p.circle(x = x, y = y, legend_label=key, size=8, color=color)
     show(p)
 
 def print_monstat_text():
-    print "monstat text printing"
-    print osd_fails_per_hour
-    print mon_flaps_per_hour
+    print("monstat text printing")
+    print(osd_fails_per_hour)
+    print(mon_flaps_per_hour)
 
 def print_monstat(mode):
     gen_mon_stats()
@@ -124,7 +125,7 @@ def print_monstat(mode):
        print_monstat_bokeh()
     else:
        print_monstat_text()
-      
+
 
 def start_parse_mon_log(filepath, mode):
    with open(filepath) as fp:
@@ -145,5 +146,5 @@ def start_parse_mon_log(filepath, mode):
              continue
        print_monstat(mode)
        utils.dump_errors()
-      
+
 
