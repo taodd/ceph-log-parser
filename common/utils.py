@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import sys
 import os
 import time
@@ -43,7 +44,7 @@ def get_len(str):
 def timestamp(x):
    xstamp = datetime.datetime.strptime(x, "%Y-%m-%d-%H:%M:%S.%f")
    return xstamp
-   
+
 def time_substract(a, b):
    return (timestamp(a) - timestamp(b)).total_seconds()
 
@@ -63,7 +64,7 @@ def log_compare(words, strtpl, lst):
     for idx in lst:
        if words[idx] != strtpl[idx]:
           return False
-    return True 
+    return True
 
 def log_match(logstr, elst):
     for e in elst:
@@ -84,7 +85,7 @@ def log_compare_without_len(words, strtpl, lst):
 def log_split(line):
     words = line.strip().split()
     return words
-    
+
 def gen_kv_list(dic):
     x = []
     y = []
@@ -109,8 +110,8 @@ def gen_v_list(dic):
 def gen_element_in_diclist(diclist, key):
   return [dic[key] for dic in diclist]
 
-# with -1 as the debug level, usually print by lderr, like below 
-# 2016-12-20 20:37:23.059442 7fc313805800 -1 filestore(/var/lib/ceph/osd/ceph-38) mount failed to open journal /var/lib/ceph/osd/ceph-38/journal: (22) Invalid argument 
+# with -1 as the debug level, usually print by lderr, like below
+# 2016-12-20 20:37:23.059442 7fc313805800 -1 filestore(/var/lib/ceph/osd/ceph-38) mount failed to open journal /var/lib/ceph/osd/ceph-38/journal: (22) Invalid argument
 errors = []
 
 def check_err_log(words, line):
@@ -126,7 +127,7 @@ def is_lderr_log(words):
     return value < 0
 def dump_errors():
    for err in errors:
-      print err
+      print(err)
 
 
 def timestamp(x):
